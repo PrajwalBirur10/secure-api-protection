@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>🛡️ Secure API Protection Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 Secure API Protection</h1>
+    <p>Enter text to scan for risks:</p>
+    <form method="post" action="/scan">
+      <textarea name="text" placeholder="Type or paste your input..."></textarea>
+      <button type="submit">Run Security Scan</button>
+    </form>
+    {% if result %}
+      <div class="result">{{ result }}</div>
+    {% endif %}
+    <a href="/logs" class="logs-link">View Logs →</a>
+  </div>
+</body>
+</html>

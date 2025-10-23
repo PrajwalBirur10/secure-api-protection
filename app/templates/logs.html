@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scan Logs</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>🗒️ Security Scan Logs</h2>
+    {% if logs %}
+      <ul class="log-list">
+      {% for log in logs %}
+        <li><b>{{ log.time }}</b> — {{ log.result }} <br><small>{{ log.input }}</small></li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>No logs found yet.</p>
+    {% endif %}
+    <a href="/">← Back to Dashboard</a>
+  </div>
+</body>
+</html>
