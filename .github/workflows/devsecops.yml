@@ -1,0 +1,44 @@
+name: DevSecOps Pipeline - App & API Protection
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  security-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        pip install -r app/requirements.txt
+        pip install bandit
+
+    - name: Run Bandit (Code Security)
+      run: bandit -r app -f txt -o bandit-report.txt
+
+    - name: Build Docker Image
+      run: docker build -t secure-api-demo .
+
+    - name: Trivy Container Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'secure-api-demo:latest'
+      continue-on-error: true
+
+    - name: Secret Scan (Gitleaks)
+      uses: gitleaks/gitleaks-action@v2
+      continue-on-error: true
+
+    - name: Deploy to Render
+      if: github.ref == 'refs/heads/main'
+      run: echo "Trigger Render deployment here"
