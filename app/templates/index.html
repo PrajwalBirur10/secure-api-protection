@@ -1,22 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🛡️ Secure API Protection Dashboard</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css"> <!-- Link to your custom CSS file -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js CDN -->
 </head>
 <body>
   <div class="container">
     <h1>🧠 Secure API Protection</h1>
     <p>Enter text to scan for risks:</p>
+    
+    <div class="summary">
+    	<h3>📊 Threat Summary</h3>
+    	<div id="threatSummary"></div>
+    </div>
+
+    <script>
+    fetch("/metrics").then(r=>r.json()).then(data=>{
+    	const summaryDiv = document.getElementById("threatSummary");
+  	let html = `<p>Total Scans: ${data.total_scans}</p>
+                    <p>Average Score: ${data.avg_risk_score.toFixed(2)}</p>`;
+        summaryDiv.innerHTML = html;
+    });
+    </script>
+    <!-- Form to scan input text -->
     <form method="post" action="/scan">
       <textarea name="text" placeholder="Type or paste your input..."></textarea>
       <button type="submit">Run Security Scan</button>
     </form>
+
+    <!-- Display scan result if available -->
     {% if result %}
-      <div class="result">{{ result }}</div>
+      <div class="result">
+        <h2>Scan Result</h2>
+        <p>Status: {{ result.status }}</p>
+        <p>Score: {{ result.score }}</p>
+      </div>
     {% endif %}
+
+    <!-- Bar chart for risk summary -->
+    <h2>Risk Summary</h2>
+    <canvas id="riskChart" width="400" height="200"></canvas>
+
+    <!-- Link to view logs -->
     <a href="/logs" class="logs-link">View Logs →</a>
   </div>
+
+  <!-- Fetch metrics for chart rendering -->
+  <script>
+    // Fetch data from the '/metrics' endpoint and render the bar chart
+    fetch("/metrics")
+      .then(r => r.json())
+      .then(data => {
+        const ctx = document.getElementById("riskChart").getContext("2d");
+
+        // Initialize Chart.js bar chart with fetched data
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: Object.keys(data.risk_summary), // Risk categories (e.g., 'SQL Injection', 'XSS', etc.)
+            datasets: [{
+              label: "Detected Risks", // Label for the chart
+              data: Object.values(data.risk_summary), // Risk counts
+              backgroundColor: "#0ea5e9", // Set background color of bars
+              borderColor: "#0284c7", // Set border color of bars
+              borderWidth: 1 // Set border width
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true // Start Y-axis from zero
+              }
+            }
+          }
+        });
+      })
+      .catch(error => console.error("Error fetching metrics:", error));
+  </script>
 </body>
 </html>
+
