@@ -1,0 +1,17 @@
+name: IaC Security
+
+on: [push, pull_request]
+
+jobs:
+  iac:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install scanners
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          pip install checkov
+      - name: Run tfsec
+        run: tfsec ./infra --out tfsec.json --format json
+      - name: Run Checkov
+        run: checkov -d ./infra -o json > checkov.json
