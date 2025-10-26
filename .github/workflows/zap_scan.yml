@@ -1,26 +1,47 @@
 name: ZAP Baseline Scan
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-
-permissions:
-  contents: read
-  security-events: write
+  workflow_dispatch:  # allows you to run manually from GitHub Actions tab
 
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      # 1️⃣ Give write access to the folder so ZAP can save reports
       - name: Set write permissions
         run: sudo chmod -R 777 ${{ github.workspace }}
 
+      # 2️⃣ Create a Docker network so containers can talk
+      - name: Create Docker network
+        run: docker network create zapnet
+
+      # 3️⃣ Run your target API in Docker
+      #    Replace 'your-app-image' with your actual image name
+      - name: Run target app
+        run: docker run -d --network zapnet --name target -p 8000:8000 your-app-image
+
+      # 4️⃣ Run ZAP scan against the target container
       - name: Run ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.11.0
+        run: |
+          docker run --rm --network zapnet \
+            -v ${{ github.workspace }}:/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://target:8000 \
+            -J report_json.json -w report_md.md -r report_html.html
+
+      # 5️⃣ Upload the ZAP reports
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v4
         with:
-          target: http://localhost:8000
-          cmd_options: "-J report_json.json -w report_md.md -r report_html.html"
+          name: zap-report
+          path: |
+            report_html.html
+            report_md.md
+            report_json.json
